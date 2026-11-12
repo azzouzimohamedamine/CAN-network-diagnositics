@@ -1,0 +1,77 @@
+/*@!Encoding:1252*/
+/* powertrain_ecu.can - POWERTRAIN_ECU simulation node on PT_CAN. (Phase 1)
+   TX : PT_Status 0x100 (20 ms), PT_Torque 0x101 (10 ms), both with E2E.
+   RX : none yet - BRAKE_Status/BMS supervision, timeouts and DTCs are added in Phase 2/3.
+   Operator keys: 's' start drive, 'x' stop, 'u'/'d' torque request +/-20 Nm, 'g' cycle gear.
+   STATUS: written, NOT yet compiled or run in CANoe. */
+includes
+{
+  #include "common/vehicle_defs.cin"
+  #include "common/e2e.cin"
+}
+
+variables
+{
+  message PT_Status msgStatus;
+  message PT_Torque msgTorque;
+  msTimer tStatus;
+  msTimer tTorque;
+  msTimer tInit;
+  byte gCntStatus = 0;
+  byte gCntTorque = 0;
+  int gState = 0;          // PT_STATE_*
+  int gGear = 0;           // GEAR_*
+  float gTorqueReq = 0.0;  // Nm
+  float gTorqueAct = 0.0;  // Nm
+  float gMotorRpm = 0.0;   // rpm (placeholder model, replaced by vehicle model in Phase 2)
+}
+
+on start
+{
+  gState = PT_STATE_INIT;
+  setTimer(tInit, 500);                    // INIT -> READY after 500 ms
+  setTimer(tStatus, PT_STATUS_CYCLE_MS);
+  setTimer(tTorque, PT_TORQUE_CYCLE_MS);
+  write("POWERTRAIN_ECU: started (DBC v1.0.0)");
+}
+
+on timer tInit
+{
+  gState = PT_STATE_READY;
+}
+
+on key 's' { if (gState == PT_STATE_READY) { gGear = GEAR_DRIVE; gState = PT_STATE_DRIVE; } }
+on key 'x' { gTorqueReq = 0.0; gGear = GEAR_PARK; if (gState == PT_STATE_DRIVE) gState = PT_STATE_READY; }
+on key 'u' { if (gState == PT_STATE_DRIVE && gTorqueReq < 400.0) gTorqueReq += 20.0; }
+on key 'd' { if (gState == PT_STATE_DRIVE && gTorqueReq > -400.0) gTorqueReq -= 20.0; }
+on key 'g' { gGear = (gGear + 1) % 4; }
+
+on timer tStatus
+{
+  msgStatus.PT_State = gState;
+  msgStatus.PT_GearPosition = gGear;
+  msgStatus.PT_DriveMode = 1;                                   // NORMAL
+  msgStatus.PT_ReadyToDrive = (gState == PT_STATE_READY || gState == PT_STATE_DRIVE);
+  msgStatus.PT_FaultActive = (gState == PT_STATE_FAULT);
+  E2E_Protect(msgStatus, gCntStatus);
+  output(msgStatus);
+  gCntStatus = (gCntStatus + 1) & 0x0F;
+  setTimer(tStatus, PT_STATUS_CYCLE_MS);
+}
+
+on timer tTorque
+{
+  // first-order lag towards request; crude speed model (placeholder)
+  gTorqueAct = gTorqueAct + (gTorqueReq - gTorqueAct) * 0.1;
+  gMotorRpm = gMotorRpm + gTorqueAct * 0.02 - gMotorRpm * 0.002;
+  if (gMotorRpm < 0.0) gMotorRpm = 0.0;
+  if (gMotorRpm > 12000.0) gMotorRpm = 12000.0;
+
+  msgTorque.MotorTorqueRequest = gTorqueReq;
+  msgTorque.MotorTorqueActual = gTorqueAct;
+  msgTorque.MotorSpeed = gMotorRpm;
+  E2E_Protect(msgTorque, gCntTorque);
+  output(msgTorque);
+  gCntTorque = (gCntTorque + 1) & 0x0F;
+  setTimer(tTorque, PT_TORQUE_CYCLE_MS);
+}

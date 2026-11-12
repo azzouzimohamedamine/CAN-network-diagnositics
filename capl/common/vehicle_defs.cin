@@ -1,0 +1,21 @@
+/*@!Encoding:1252*/
+/* vehicle_defs.cin - constants shared by all CAPL nodes (DBC v1.0.0).
+   Values mirror scripts/can_matrix.py. Never change a released value. */
+variables
+{
+  // cycle times [ms]
+  const int PT_STATUS_CYCLE_MS = 20;
+  const int PT_TORQUE_CYCLE_MS = 10;
+  // PT_State enum
+  const int PT_STATE_OFF = 0;
+  const int PT_STATE_INIT = 1;
+  const int PT_STATE_READY = 2;
+  const int PT_STATE_DRIVE = 3;
+  const int PT_STATE_DEGRADED = 4;
+  const int PT_STATE_FAULT = 5;
+  // gear enum
+  const int GEAR_PARK = 0;
+  const int GEAR_REVERSE = 1;
+  const int GEAR_NEUTRAL = 2;
+  const int GEAR_DRIVE = 3;
+}

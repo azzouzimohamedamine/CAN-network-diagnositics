@@ -1,0 +1,45 @@
+/*@!Encoding:1252*/
+/* e2e.cin - E2E profile VEH-E2E-1: 4-bit alive counter in byte 6 (bits 0-3),
+   CRC-8 SAE J1850 (poly 0x1D, init 0xFF, xorout 0xFF) over bytes 0..6 in byte 7.
+   Reference: python/can_analysis/e2e.py (check value for "123456789" = 0x4B).
+   STATUS: written, not yet compiled in CANoe. */
+variables
+{
+  const int E2E_OK = 0;
+  const int E2E_CRC_ERROR = 1;
+  const int E2E_COUNTER_ERROR = 2;
+}
+
+byte E2E_Crc8Frame(message * m)
+{
+  byte crc;
+  int i;
+  int b;
+  crc = 0xFF;
+  for (i = 0; i < 7; i++)
+  {
+    crc = crc ^ m.byte(i);
+    for (b = 0; b < 8; b++)
+    {
+      if ((crc & 0x80) != 0)
+        crc = ((crc << 1) ^ 0x1D) & 0xFF;
+      else
+        crc = (crc << 1) & 0xFF;
+    }
+  }
+  return crc ^ 0xFF;
+}
+
+void E2E_Protect(message * m, byte counter)
+{
+  m.byte(6) = (m.byte(6) & 0xF0) | (counter & 0x0F);
+  m.byte(7) = E2E_Crc8Frame(m);
+}
+
+// prevCounter < 0 disables the counter check (first frame)
+int E2E_Verify(message * m, int prevCounter)
+{
+  if (m.byte(7) != E2E_Crc8Frame(m)) return E2E_CRC_ERROR;
+  if (prevCounter >= 0 && (m.byte(6) & 0x0F) != ((prevCounter + 1) & 0x0F)) return E2E_COUNTER_ERROR;
+  return E2E_OK;
+}
