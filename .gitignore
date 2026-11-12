@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+# Vector tool artifacts (proprietary / generated) - never commit
+*.cfg
+*.cfg.bak
+*.cfg.*
+*.cna
+*.cnaX
+*.cbf
+*.vcdl
+*.blf
+*.asc
+*.mf4
+Backup/
+Logs/
+# Keep small, reviewed sample logs explicitly via: git add -f results/sample_logs/<file>
+results/*.png
+!results/.gitkeep

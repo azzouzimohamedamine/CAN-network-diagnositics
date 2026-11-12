@@ -1,0 +1,5 @@
+cantools>=39.0
+python-can>=4.3
+pytest>=7.0
+matplotlib>=3.7
+pandas>=2.0
