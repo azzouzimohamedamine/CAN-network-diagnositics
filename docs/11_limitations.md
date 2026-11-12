@@ -1,0 +1,10 @@
+# 11 - Limitations (explicit)
+- Virtual/SIL only. No real vehicle, ECU, HIL, or physical bus; no signal-integrity, EMC, bit-timing, error-frame, TEC/REC or bus-off behaviour (virtual channels do not model them).
+- Not AUTOSAR, not ISO 26262 compliant, no ASIL claims. Diagnostics are an academic subset of UDS/OBD-II concepts, single-frame only (no ISO-TP, no security access, no 0x2E/0x31/0x34-0x37, no VIN, volatile DTC storage).
+- Project-specific DTC codes and CAN IDs; real OBD-II uses different IDs.
+- E2E profile is inspired by common practice, not the AUTOSAR E2E library; 4-bit counter and CRC-8 give limited detection probability.
+- One DBC shared by two networks; bit rates identical (no rate conversion in the gateway).
+- Plant models (speed, battery) are simplistic placeholders.
+- Phase 1: CAPL files are written but not compiled or executed; CANoe import of the DBC unverified.
+- Bus-load figures are analytical until measured.
+- CANoe/CANalyzer need a Vector licence; availability of demo/student editions must be checked on Vector's site.

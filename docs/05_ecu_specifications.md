@@ -9,7 +9,7 @@ Message/signal details: `../can_database/can_matrix.md`. Timeouts = 3 x cycle. "
 | TX | PT_Status 0x100 (20 ms), PT_Torque 0x101 (10 ms). |
 | RX | BRAKE_Status 0x200 (60 ms timeout), BRAKE_VehicleDynamics 0x201 (30 ms), BMS_Status 0x300 (300 ms), BMS_Measurements 0x301 (150 ms), BMS_Faults 0x302 (1500 ms). |
 | Error behaviour | 0x200 or brake signal invalid -> torque limited/zero, state DEGRADED. BMS timeout/critical fault -> torque request forced to 0, state FAULT. Invalid VehicleSpeed -> use last valid value for <= 500 ms then DEGRADED. |
-| Diagnostics | DTC U1100 (lost BRAKE_ECU), U1101 (lost BMS_ECU), U1110/U1111 (E2E), C1201 (VehicleSpeed invalid); DIDs F186/F189/F190. |
+| Diagnostics | DTC U1100 (lost BRAKE_ECU), U1101 (lost BMS_ECU), U1110/U1111 (E2E), C1201 (VehicleSpeed invalid); DIDs F186/F189/F18C. |
 | Status | TX implemented in CAPL (not compiled); RX/supervision Phase 2-3. |
 
 ## BRAKE_ECU (PT_CAN) - 0x702 / 0x70A
