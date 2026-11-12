@@ -1,0 +1,164 @@
+/*@!Encoding:1252*/
+/* supervision.cin - receive supervision: timeout, E2E (counter/CRC), signal plausibility,
+   with debounce (FLT-REQ-005: confirm after 3 failures, heal after 5 good).
+   Usage: Mon_Init() per monitored message in 'on start'; Mon_OnRx() in every
+   'on message' handler (returns 1 if the frame is usable); Mon_Tick() every 10 ms.
+   STATUS: not compiled in CANoe. */
+variables
+{
+  const int MON_DEBOUNCE_FAIL = 3;
+  const int MON_DEBOUNCE_HEAL = 5;
+  const int MON_STARTUP_GRACE_MS = 1000;
+  const int MON_TICK_MS = 10;
+  long gMonNowMs = 0;
+  long gMonTimeoutMs[8];
+  long gMonLastRxMs[8];
+  long gMonDtcTimeout[8];
+  int  gMonSeen[8];
+  int  gMonPrevCnt[8];
+  int  gMonFailRun[8];
+  int  gMonGoodRun[8];
+  int  gMonE2EFault[8];
+  int  gMonTimedOut[8];
+  int  gSigFail[8];
+  int  gSigGood[8];
+  int  gSigBad[8];
+}
+
+void Mon_Init(int id, long timeoutMs, long dtcTimeout)
+{
+  gMonTimeoutMs[id] = timeoutMs;
+  gMonDtcTimeout[id] = dtcTimeout;
+  gMonLastRxMs[id] = 0;
+  gMonSeen[id] = 0;
+  gMonPrevCnt[id] = 0;
+  gMonFailRun[id] = 0;
+  gMonGoodRun[id] = 0;
+  gMonE2EFault[id] = 0;
+  gMonTimedOut[id] = 0;
+}
+
+int Mon_CodeStillFailing(long code, int exceptId)
+{
+  int i;
+  for (i = 0; i < 8; i++)
+  {
+    if (i != exceptId && gMonTimeoutMs[i] > 0 && gMonDtcTimeout[i] == code && gMonTimedOut[i] != 0) return 1;
+  }
+  return 0;
+}
+
+int Mon_AnyE2EFault()
+{
+  int i;
+  for (i = 0; i < 8; i++)
+  {
+    if (gMonE2EFault[i] != 0) return 1;
+  }
+  return 0;
+}
+
+// returns 1 if frame accepted (E2E ok), 0 if it must be discarded
+int Mon_OnRx(int id, message * m)
+{
+  int st;
+  int prev;
+  prev = -1;
+  if (gMonSeen[id] != 0) prev = gMonPrevCnt[id];
+  st = E2E_Verify(m, prev);
+  gMonLastRxMs[id] = gMonNowMs;
+  gMonSeen[id] = 1;
+  gMonPrevCnt[id] = m.byte(6) & 0x0F;
+  if (st != E2E_OK)
+  {
+    gMonGoodRun[id] = 0;
+    gMonFailRun[id]++;
+    if (gMonFailRun[id] >= MON_DEBOUNCE_FAIL)
+    {
+      gMonE2EFault[id] = 1;
+      if (st == E2E_CRC_ERROR) Dtc_SetFailed(DTC_U1111, DTC_FT_PROTECTION);
+      else Dtc_SetFailed(DTC_U1110, DTC_FT_COUNTER);
+    }
+    return 0;
+  }
+  gMonFailRun[id] = 0;
+  gMonGoodRun[id]++;
+  if (gMonGoodRun[id] >= MON_DEBOUNCE_HEAL)
+  {
+    if (gMonE2EFault[id] != 0)
+    {
+      gMonE2EFault[id] = 0;
+      if (Mon_AnyE2EFault() == 0)
+      {
+        Dtc_SetPassed(DTC_U1110);
+        Dtc_SetPassed(DTC_U1111);
+      }
+    }
+    if (gMonTimedOut[id] != 0)
+    {
+      gMonTimedOut[id] = 0;
+      if (Mon_CodeStillFailing(gMonDtcTimeout[id], id) == 0) Dtc_SetPassed(gMonDtcTimeout[id]);
+    }
+  }
+  return 1;
+}
+
+// call every MON_TICK_MS
+void Mon_Tick()
+{
+  int i;
+  gMonNowMs = gMonNowMs + MON_TICK_MS;
+  if (gMonNowMs < MON_STARTUP_GRACE_MS) return;
+  for (i = 0; i < 8; i++)
+  {
+    if (gMonTimeoutMs[i] > 0 && gMonTimedOut[i] == 0 && (gMonNowMs - gMonLastRxMs[i]) > gMonTimeoutMs[i])
+    {
+      gMonTimedOut[i] = 1;
+      gMonGoodRun[i] = 0;
+      gMonFailRun[i] = 0;
+      gMonSeen[i] = 0;                 // no counter check on first frame after an outage
+      Dtc_SetFailed(gMonDtcTimeout[i], DTC_FT_MISSING);
+    }
+  }
+}
+
+// 1 if the message is neither timed out nor E2E-faulty
+int Mon_Ok(int id)
+{
+  if (gMonTimedOut[id] != 0 || gMonE2EFault[id] != 0) return 0;
+  return 1;
+}
+
+// Plausibility of a raw signal value. Returns 1 if usable now (valid and in range).
+// A bad sample is never used; the DTC is confirmed after 3 consecutive bad samples, healed after 5 good.
+int Sig_Check(int id, long raw, long invalidRaw, long rawMin, long rawMax, long dtc, byte ftype)
+{
+  int bad;
+  bad = 0;
+  if (raw == invalidRaw) bad = 1;
+  else if (raw < rawMin || raw > rawMax) bad = 1;
+  if (bad != 0)
+  {
+    gSigGood[id] = 0;
+    gSigFail[id]++;
+    if (gSigFail[id] >= MON_DEBOUNCE_FAIL)
+    {
+      gSigBad[id] = 1;
+      Dtc_SetFailed(dtc, ftype);
+    }
+    return 0;
+  }
+  gSigFail[id] = 0;
+  gSigGood[id]++;
+  if (gSigBad[id] != 0 && gSigGood[id] >= MON_DEBOUNCE_HEAL)
+  {
+    gSigBad[id] = 0;
+    Dtc_SetPassed(dtc);
+  }
+  return 1;
+}
+
+int Sig_IsBad(int id)
+{
+  return gSigBad[id];
+}

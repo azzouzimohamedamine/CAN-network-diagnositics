@@ -1,0 +1,64 @@
+/*@!Encoding:1252*/
+/* dtc.cin - minimal per-node DTC store (Phase 2). Volatile, max 8 DTCs.
+   Status bits: bit0 testFailed, bit3 confirmedDTC. Debouncing is done by the caller
+   (supervision.cin), so Dtc_SetFailed() sets both bits. UDS access is added in Phase 4.
+   Include order in a node: vehicle_defs, e2e, dtc, supervision.  STATUS: not compiled in CANoe. */
+variables
+{
+  long gDtcCode[8];
+  byte gDtcFType[8];
+  byte gDtcStatus[8];
+  int  gDtcCount = 0;
+}
+
+int Dtc_Find(long code)
+{
+  int i;
+  for (i = 0; i < gDtcCount; i++)
+  {
+    if (gDtcCode[i] == code) return i;
+  }
+  return -1;
+}
+
+void Dtc_SetFailed(long code, byte ftype)
+{
+  int i;
+  i = Dtc_Find(code);
+  if (i < 0)
+  {
+    if (gDtcCount >= 8) return;
+    i = gDtcCount;
+    gDtcCount++;
+    gDtcCode[i] = code;
+    gDtcFType[i] = ftype;
+    gDtcStatus[i] = 0;
+  }
+  if ((gDtcStatus[i] & 0x01) == 0)
+    write("DTC %lX set, failure type %X", code, ftype);
+  gDtcStatus[i] = gDtcStatus[i] | 0x09;
+}
+
+void Dtc_SetPassed(long code)
+{
+  int i;
+  i = Dtc_Find(code);
+  if (i >= 0 && (gDtcStatus[i] & 0x01) != 0)
+  {
+    gDtcStatus[i] = gDtcStatus[i] & 0xFE;       // confirmed stays until cleared
+    write("DTC %lX healed (testFailed cleared, confirmed kept)", code);
+  }
+}
+
+int Dtc_IsFailed(long code)
+{
+  int i;
+  i = Dtc_Find(code);
+  if (i < 0) return 0;
+  return ((gDtcStatus[i] & 0x01) != 0);
+}
+
+void Dtc_ClearAll()
+{
+  gDtcCount = 0;
+}

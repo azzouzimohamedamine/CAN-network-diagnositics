@@ -18,4 +18,37 @@ variables
   const int GEAR_REVERSE = 1;
   const int GEAR_NEUTRAL = 2;
   const int GEAR_DRIVE = 3;
+  // --- added in Phase 2 (additive; nothing above changed) ---
+  const int BRAKE_STATUS_CYCLE_MS = 20;
+  const int BRAKE_DYN_CYCLE_MS = 10;
+  const int BMS_STATUS_CYCLE_MS = 100;
+  const int BMS_MEAS_CYCLE_MS = 50;
+  const int BMS_FAULT_HB_MS = 500;
+  const int CLUSTER_STATUS_CYCLE_MS = 100;
+  const int CLUSTER_WARN_HB_MS = 500;
+  // supervision timeouts = 3 x cycle (heartbeat for event messages) [ms]
+  const int TO_PT_STATUS_MS = 60;
+  const int TO_BRAKE_STATUS_MS = 60;
+  const int TO_BRAKE_DYN_MS = 30;
+  const int TO_PT_TORQUE_MS = 30;
+  const int TO_BMS_STATUS_MS = 300;
+  const int TO_BMS_MEAS_MS = 150;
+  const int TO_BMS_FAULT_MS = 1500;
+  // DTCs: 2-byte code as sent by UDS (U1100 -> 0xD100), project-specific, see docs/06
+  const long DTC_U1100 = 0xD100;  // lost BRAKE_ECU
+  const long DTC_U1101 = 0xD101;  // lost BMS_ECU
+  const long DTC_U1102 = 0xD102;  // lost POWERTRAIN_ECU
+  const long DTC_U1103 = 0xD103;  // lost GATEWAY_ECU
+  const long DTC_U1110 = 0xD110;  // E2E alive counter
+  const long DTC_U1111 = 0xD111;  // E2E checksum
+  const long DTC_U1112 = 0xD112;  // unexpected CAN ID
+  const long DTC_C1201 = 0x5201;  // VehicleSpeed invalid/out of range
+  const long DTC_P1301 = 0x1301;  // BatteryVoltage
+  const long DTC_P1302 = 0x1302;  // BatteryTemperature
+  const long DTC_P1303 = 0x1303;  // BatteryCurrent
+  // failure type bytes (verify against your licensed ISO 14229-1)
+  const int DTC_FT_MISSING = 0x87;
+  const int DTC_FT_INVALID = 0x86;
+  const int DTC_FT_COUNTER = 0x82;
+  const int DTC_FT_PROTECTION = 0x83;
 }
