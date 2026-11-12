@@ -1,0 +1,362 @@
+VERSION "1.0.0"
+
+NS_ :
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	BA_DEF_DEF_
+
+BS_:
+
+BU_: POWERTRAIN_ECU BRAKE_ECU BMS_ECU CLUSTER_ECU GATEWAY_ECU DIAG_TESTER
+
+BO_ 256 PT_Status: 8 POWERTRAIN_ECU
+ SG_ PT_State : 0|4@1+ (1,0) [0|5] "" BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ PT_GearPosition : 4|4@1+ (1,0) [0|3] "" BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ PT_DriveMode : 8|2@1+ (1,0) [0|2] "" BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ PT_ReadyToDrive : 10|1@1+ (1,0) [0|1] "" BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ PT_FaultActive : 11|1@1+ (1,0) [0|1] "" BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ PT_Status_Counter : 48|4@1+ (1,0) [0|15] "" BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ PT_Status_Checksum : 56|8@1+ (1,0) [0|255] "" BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+
+BO_ 257 PT_Torque: 8 POWERTRAIN_ECU
+ SG_ MotorTorqueRequest : 0|16@1- (0.1,0) [-400|400] "Nm" BMS_ECU,GATEWAY_ECU
+ SG_ MotorTorqueActual : 16|16@1- (0.1,0) [-400|400] "Nm" BMS_ECU,GATEWAY_ECU
+ SG_ MotorSpeed : 32|16@1- (1,0) [-500|12000] "rpm" BMS_ECU,GATEWAY_ECU
+ SG_ PT_Torque_Counter : 48|4@1+ (1,0) [0|15] "" BMS_ECU,GATEWAY_ECU
+ SG_ PT_Torque_Checksum : 56|8@1+ (1,0) [0|255] "" BMS_ECU,GATEWAY_ECU
+
+BO_ 512 BRAKE_Status: 8 BRAKE_ECU
+ SG_ BrakeStatus : 0|2@1+ (1,0) [0|2] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ ABS_Active : 2|1@1+ (1,0) [0|1] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BrakeSystemFault : 3|1@1+ (1,0) [0|1] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BrakePedalPosition : 8|8@1+ (0.5,0) [0|100] "%" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BrakePressure : 16|12@1+ (0.1,0) [0|250] "bar" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BRAKE_Status_Counter : 48|4@1+ (1,0) [0|15] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BRAKE_Status_Checksum : 56|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+
+BO_ 513 BRAKE_VehicleDynamics: 8 BRAKE_ECU
+ SG_ VehicleSpeed : 0|16@1+ (0.01,0) [0|300] "km/h" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ LongitudinalAccel : 16|16@1- (0.001,0) [-20|20] "m/s2" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ YawRate : 32|16@1- (0.01,0) [-300|300] "deg/s" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BRAKE_VehicleDynamics_Counter : 48|4@1+ (1,0) [0|15] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BRAKE_VehicleDynamics_Checksum : 56|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+
+BO_ 768 BMS_Status: 8 BMS_ECU
+ SG_ BMS_State : 0|4@1+ (1,0) [0|5] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ ContactorState : 4|2@1+ (1,0) [0|2] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ SOC : 8|10@1+ (0.1,0) [0|100] "%" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ SOH : 18|10@1+ (0.1,0) [0|100] "%" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_Status_Counter : 48|4@1+ (1,0) [0|15] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_Status_Checksum : 56|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+
+BO_ 769 BMS_Measurements: 8 BMS_ECU
+ SG_ BatteryVoltage : 0|16@1+ (0.1,0) [0|500] "V" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BatteryCurrent : 16|16@1- (0.1,0) [-500|500] "A" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BatteryTemperature : 32|8@1+ (1,-40) [-40|125] "degC" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_Measurements_Counter : 48|4@1+ (1,0) [0|15] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_Measurements_Checksum : 56|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+
+BO_ 770 BMS_Faults: 8 BMS_ECU
+ SG_ BMS_Fault : 0|8@1+ (1,0) [0|6] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_FaultSeverity : 8|2@1+ (1,0) [0|3] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_FaultActive : 10|1@1+ (1,0) [0|1] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_Faults_Counter : 48|4@1+ (1,0) [0|15] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ BMS_Faults_Checksum : 56|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,GATEWAY_ECU,CLUSTER_ECU
+
+BO_ 1024 CLUSTER_Status: 8 CLUSTER_ECU
+ SG_ Cluster_State : 0|4@1+ (1,0) [0|3] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ DisplayedSpeed : 8|8@1+ (1,0) [0|250] "km/h" GATEWAY_ECU,DIAG_TESTER
+ SG_ DisplayedSOC : 16|8@1+ (0.4,0) [0|100] "%" GATEWAY_ECU,DIAG_TESTER
+ SG_ CLUSTER_Status_Counter : 48|4@1+ (1,0) [0|15] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ CLUSTER_Status_Checksum : 56|8@1+ (1,0) [0|255] "" GATEWAY_ECU,DIAG_TESTER
+
+BO_ 1025 CLUSTER_Warning: 8 CLUSTER_ECU
+ SG_ Warn_Battery : 0|1@1+ (1,0) [0|1] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ Warn_Brake : 1|1@1+ (1,0) [0|1] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ Warn_Powertrain : 2|1@1+ (1,0) [0|1] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ Warn_CommLoss : 3|1@1+ (1,0) [0|1] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ Warn_Diagnostic : 4|1@1+ (1,0) [0|1] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ Warn_Gateway : 5|1@1+ (1,0) [0|1] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ CLUSTER_Warning_Counter : 48|4@1+ (1,0) [0|15] "" GATEWAY_ECU,DIAG_TESTER
+ SG_ CLUSTER_Warning_Checksum : 56|8@1+ (1,0) [0|255] "" GATEWAY_ECU,DIAG_TESTER
+
+BO_ 1280 GW_Status: 8 GATEWAY_ECU
+ SG_ GW_State : 0|4@1+ (1,0) [0|4] "" CLUSTER_ECU,DIAG_TESTER
+ SG_ GW_BusLoadPT : 8|8@1+ (0.5,0) [0|100] "%" CLUSTER_ECU,DIAG_TESTER
+ SG_ GW_BusLoadINFO : 16|8@1+ (0.5,0) [0|100] "%" CLUSTER_ECU,DIAG_TESTER
+ SG_ GW_RoutingErrorCount : 24|8@1+ (1,0) [0|254] "" CLUSTER_ECU,DIAG_TESTER
+ SG_ GW_Status_Counter : 48|4@1+ (1,0) [0|15] "" CLUSTER_ECU,DIAG_TESTER
+ SG_ GW_Status_Checksum : 56|8@1+ (1,0) [0|255] "" CLUSTER_ECU,DIAG_TESTER
+
+BO_ 1792 DIAG_REQ_FUNC: 8 DIAG_TESTER
+ SG_ DIAG_REQ_FUNC_PCI : 0|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ DIAG_REQ_FUNC_SID : 8|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+ SG_ DIAG_REQ_FUNC_Data : 16|48@1+ (1,0) [0|281474976710655] "" POWERTRAIN_ECU,BRAKE_ECU,BMS_ECU,GATEWAY_ECU,CLUSTER_ECU
+
+BO_ 1793 DIAG_REQ_PT: 8 DIAG_TESTER
+ SG_ DIAG_REQ_PT_PCI : 0|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,GATEWAY_ECU
+ SG_ DIAG_REQ_PT_SID : 8|8@1+ (1,0) [0|255] "" POWERTRAIN_ECU,GATEWAY_ECU
+ SG_ DIAG_REQ_PT_Data : 16|48@1+ (1,0) [0|281474976710655] "" POWERTRAIN_ECU,GATEWAY_ECU
+
+BO_ 1794 DIAG_REQ_BRAKE: 8 DIAG_TESTER
+ SG_ DIAG_REQ_BRAKE_PCI : 0|8@1+ (1,0) [0|255] "" BRAKE_ECU,GATEWAY_ECU
+ SG_ DIAG_REQ_BRAKE_SID : 8|8@1+ (1,0) [0|255] "" BRAKE_ECU,GATEWAY_ECU
+ SG_ DIAG_REQ_BRAKE_Data : 16|48@1+ (1,0) [0|281474976710655] "" BRAKE_ECU,GATEWAY_ECU
+
+BO_ 1795 DIAG_REQ_BMS: 8 DIAG_TESTER
+ SG_ DIAG_REQ_BMS_PCI : 0|8@1+ (1,0) [0|255] "" BMS_ECU,GATEWAY_ECU
+ SG_ DIAG_REQ_BMS_SID : 8|8@1+ (1,0) [0|255] "" BMS_ECU,GATEWAY_ECU
+ SG_ DIAG_REQ_BMS_Data : 16|48@1+ (1,0) [0|281474976710655] "" BMS_ECU,GATEWAY_ECU
+
+BO_ 1796 DIAG_REQ_GW: 8 DIAG_TESTER
+ SG_ DIAG_REQ_GW_PCI : 0|8@1+ (1,0) [0|255] "" GATEWAY_ECU
+ SG_ DIAG_REQ_GW_SID : 8|8@1+ (1,0) [0|255] "" GATEWAY_ECU
+ SG_ DIAG_REQ_GW_Data : 16|48@1+ (1,0) [0|281474976710655] "" GATEWAY_ECU
+
+BO_ 1797 DIAG_REQ_CLUSTER: 8 DIAG_TESTER
+ SG_ DIAG_REQ_CLUSTER_PCI : 0|8@1+ (1,0) [0|255] "" CLUSTER_ECU
+ SG_ DIAG_REQ_CLUSTER_SID : 8|8@1+ (1,0) [0|255] "" CLUSTER_ECU
+ SG_ DIAG_REQ_CLUSTER_Data : 16|48@1+ (1,0) [0|281474976710655] "" CLUSTER_ECU
+
+BO_ 1801 DIAG_RESP_PT: 8 POWERTRAIN_ECU
+ SG_ DIAG_RESP_PT_PCI : 0|8@1+ (1,0) [0|255] "" DIAG_TESTER,GATEWAY_ECU
+ SG_ DIAG_RESP_PT_SID : 8|8@1+ (1,0) [0|255] "" DIAG_TESTER,GATEWAY_ECU
+ SG_ DIAG_RESP_PT_Data : 16|48@1+ (1,0) [0|281474976710655] "" DIAG_TESTER,GATEWAY_ECU
+
+BO_ 1802 DIAG_RESP_BRAKE: 8 BRAKE_ECU
+ SG_ DIAG_RESP_BRAKE_PCI : 0|8@1+ (1,0) [0|255] "" DIAG_TESTER,GATEWAY_ECU
+ SG_ DIAG_RESP_BRAKE_SID : 8|8@1+ (1,0) [0|255] "" DIAG_TESTER,GATEWAY_ECU
+ SG_ DIAG_RESP_BRAKE_Data : 16|48@1+ (1,0) [0|281474976710655] "" DIAG_TESTER,GATEWAY_ECU
+
+BO_ 1803 DIAG_RESP_BMS: 8 BMS_ECU
+ SG_ DIAG_RESP_BMS_PCI : 0|8@1+ (1,0) [0|255] "" DIAG_TESTER,GATEWAY_ECU
+ SG_ DIAG_RESP_BMS_SID : 8|8@1+ (1,0) [0|255] "" DIAG_TESTER,GATEWAY_ECU
+ SG_ DIAG_RESP_BMS_Data : 16|48@1+ (1,0) [0|281474976710655] "" DIAG_TESTER,GATEWAY_ECU
+
+BO_ 1804 DIAG_RESP_GW: 8 GATEWAY_ECU
+ SG_ DIAG_RESP_GW_PCI : 0|8@1+ (1,0) [0|255] "" DIAG_TESTER
+ SG_ DIAG_RESP_GW_SID : 8|8@1+ (1,0) [0|255] "" DIAG_TESTER
+ SG_ DIAG_RESP_GW_Data : 16|48@1+ (1,0) [0|281474976710655] "" DIAG_TESTER
+
+BO_ 1805 DIAG_RESP_CLUSTER: 8 CLUSTER_ECU
+ SG_ DIAG_RESP_CLUSTER_PCI : 0|8@1+ (1,0) [0|255] "" DIAG_TESTER
+ SG_ DIAG_RESP_CLUSTER_SID : 8|8@1+ (1,0) [0|255] "" DIAG_TESTER
+ SG_ DIAG_RESP_CLUSTER_Data : 16|48@1+ (1,0) [0|281474976710655] "" DIAG_TESTER
+
+CM_ BO_ 256 "Powertrain state, gear, drive mode";
+CM_ SG_ 256 PT_Status_Counter "E2E alive counter";
+CM_ SG_ 256 PT_Status_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 257 "Motor torque and speed (not routed to INFO_CAN: demonstrates filtering)";
+CM_ SG_ 257 PT_Torque_Counter "E2E alive counter";
+CM_ SG_ 257 PT_Torque_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 512 "Brake system status";
+CM_ SG_ 512 BRAKE_Status_Counter "E2E alive counter";
+CM_ SG_ 512 BRAKE_Status_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 513 "Wheel-speed-derived vehicle dynamics (reused by Project 3 AEB)";
+CM_ SG_ 513 BRAKE_VehicleDynamics_Counter "E2E alive counter";
+CM_ SG_ 513 BRAKE_VehicleDynamics_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 768 "Battery state, SOC, SOH";
+CM_ SG_ 768 BMS_Status_Counter "E2E alive counter";
+CM_ SG_ 768 BMS_Status_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 769 "Pack measurements. Positive current = discharge (convention frozen)";
+CM_ SG_ 769 BMS_Measurements_Counter "E2E alive counter";
+CM_ SG_ 769 BMS_Measurements_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 770 "Event-triggered on change (<=10 ms), 500 ms heartbeat";
+CM_ SG_ 770 BMS_Faults_Counter "E2E alive counter";
+CM_ SG_ 770 BMS_Faults_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 1024 "What the cluster currently displays";
+CM_ SG_ 1024 CLUSTER_Status_Counter "E2E alive counter";
+CM_ SG_ 1024 CLUSTER_Status_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 1025 "Warning lamps; event on change, 500 ms heartbeat";
+CM_ SG_ 1025 CLUSTER_Warning_Counter "E2E alive counter";
+CM_ SG_ 1025 CLUSTER_Warning_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 1280 "Gateway health and measured bus load";
+CM_ SG_ 1280 GW_Status_Counter "E2E alive counter";
+CM_ SG_ 1280 GW_Status_Checksum "E2E CRC-8 SAE J1850 over bytes 0-6";
+CM_ BO_ 1792 "Functional request (broadcast)";
+CM_ BO_ 1793 "Physical request to POWERTRAIN_ECU";
+CM_ BO_ 1794 "Physical request to BRAKE_ECU";
+CM_ BO_ 1795 "Physical request to BMS_ECU";
+CM_ BO_ 1796 "Physical request to GATEWAY_ECU";
+CM_ BO_ 1797 "Physical request to CLUSTER_ECU";
+CM_ BO_ 1801 "Response of POWERTRAIN_ECU";
+CM_ BO_ 1802 "Response of BRAKE_ECU";
+CM_ BO_ 1803 "Response of BMS_ECU";
+CM_ BO_ 1804 "Response of GATEWAY_ECU";
+CM_ BO_ 1805 "Response of CLUSTER_ECU";
+BA_DEF_ "BusType" STRING ;
+BA_DEF_ "DBName" STRING ;
+BA_DEF_ "DBVersion" STRING ;
+BA_DEF_ BO_ "GenMsgCycleTime" INT 0 65535;
+BA_DEF_ BO_ "GenMsgSendType" ENUM "Cyclic","Event","CyclicAndEvent";
+BA_DEF_ BO_ "MsgTimeoutMs" INT 0 65535;
+BA_DEF_ BO_ "E2EProtected" ENUM "No","Yes";
+BA_DEF_ BO_ "OriginBus" STRING ;
+BA_DEF_ SG_ "SigInvalidRaw" INT 0 4294967295;
+BA_DEF_DEF_ "BusType" "CAN";
+BA_DEF_DEF_ "DBName" "";
+BA_DEF_DEF_ "DBVersion" "";
+BA_DEF_DEF_ "GenMsgCycleTime" 0;
+BA_DEF_DEF_ "GenMsgSendType" "Event";
+BA_DEF_DEF_ "MsgTimeoutMs" 0;
+BA_DEF_DEF_ "E2EProtected" "No";
+BA_DEF_DEF_ "OriginBus" "PT_CAN";
+BA_DEF_DEF_ "SigInvalidRaw" 0;
+BA_ "BusType" "CAN";
+BA_ "DBName" "vehicle";
+BA_ "DBVersion" "1.0.0";
+BA_ "GenMsgCycleTime" BO_ 256 20;
+BA_ "GenMsgSendType" BO_ 256 0;
+BA_ "MsgTimeoutMs" BO_ 256 60;
+BA_ "E2EProtected" BO_ 256 1;
+BA_ "OriginBus" BO_ 256 "PT_CAN";
+BA_ "SigInvalidRaw" SG_ 256 PT_State 15;
+BA_ "SigInvalidRaw" SG_ 256 PT_GearPosition 15;
+BA_ "SigInvalidRaw" SG_ 256 PT_DriveMode 3;
+BA_ "GenMsgCycleTime" BO_ 257 10;
+BA_ "GenMsgSendType" BO_ 257 0;
+BA_ "MsgTimeoutMs" BO_ 257 30;
+BA_ "E2EProtected" BO_ 257 1;
+BA_ "OriginBus" BO_ 257 "PT_CAN";
+BA_ "SigInvalidRaw" SG_ 257 MotorTorqueRequest 32767;
+BA_ "SigInvalidRaw" SG_ 257 MotorTorqueActual 32767;
+BA_ "SigInvalidRaw" SG_ 257 MotorSpeed 32767;
+BA_ "GenMsgCycleTime" BO_ 512 20;
+BA_ "GenMsgSendType" BO_ 512 0;
+BA_ "MsgTimeoutMs" BO_ 512 60;
+BA_ "E2EProtected" BO_ 512 1;
+BA_ "OriginBus" BO_ 512 "PT_CAN";
+BA_ "SigInvalidRaw" SG_ 512 BrakeStatus 3;
+BA_ "SigInvalidRaw" SG_ 512 BrakePedalPosition 255;
+BA_ "SigInvalidRaw" SG_ 512 BrakePressure 4095;
+BA_ "GenMsgCycleTime" BO_ 513 10;
+BA_ "GenMsgSendType" BO_ 513 0;
+BA_ "MsgTimeoutMs" BO_ 513 30;
+BA_ "E2EProtected" BO_ 513 1;
+BA_ "OriginBus" BO_ 513 "PT_CAN";
+BA_ "SigInvalidRaw" SG_ 513 VehicleSpeed 65535;
+BA_ "SigInvalidRaw" SG_ 513 LongitudinalAccel 32767;
+BA_ "SigInvalidRaw" SG_ 513 YawRate 32767;
+BA_ "GenMsgCycleTime" BO_ 768 100;
+BA_ "GenMsgSendType" BO_ 768 0;
+BA_ "MsgTimeoutMs" BO_ 768 300;
+BA_ "E2EProtected" BO_ 768 1;
+BA_ "OriginBus" BO_ 768 "PT_CAN";
+BA_ "SigInvalidRaw" SG_ 768 BMS_State 15;
+BA_ "SigInvalidRaw" SG_ 768 ContactorState 3;
+BA_ "SigInvalidRaw" SG_ 768 SOC 1023;
+BA_ "SigInvalidRaw" SG_ 768 SOH 1023;
+BA_ "GenMsgCycleTime" BO_ 769 50;
+BA_ "GenMsgSendType" BO_ 769 0;
+BA_ "MsgTimeoutMs" BO_ 769 150;
+BA_ "E2EProtected" BO_ 769 1;
+BA_ "OriginBus" BO_ 769 "PT_CAN";
+BA_ "SigInvalidRaw" SG_ 769 BatteryVoltage 65535;
+BA_ "SigInvalidRaw" SG_ 769 BatteryCurrent 32767;
+BA_ "SigInvalidRaw" SG_ 769 BatteryTemperature 255;
+BA_ "GenMsgCycleTime" BO_ 770 500;
+BA_ "GenMsgSendType" BO_ 770 2;
+BA_ "MsgTimeoutMs" BO_ 770 1500;
+BA_ "E2EProtected" BO_ 770 1;
+BA_ "OriginBus" BO_ 770 "PT_CAN";
+BA_ "SigInvalidRaw" SG_ 770 BMS_Fault 255;
+BA_ "GenMsgCycleTime" BO_ 1024 100;
+BA_ "GenMsgSendType" BO_ 1024 0;
+BA_ "MsgTimeoutMs" BO_ 1024 300;
+BA_ "E2EProtected" BO_ 1024 1;
+BA_ "OriginBus" BO_ 1024 "INFO_CAN";
+BA_ "SigInvalidRaw" SG_ 1024 Cluster_State 15;
+BA_ "SigInvalidRaw" SG_ 1024 DisplayedSpeed 255;
+BA_ "SigInvalidRaw" SG_ 1024 DisplayedSOC 255;
+BA_ "GenMsgCycleTime" BO_ 1025 500;
+BA_ "GenMsgSendType" BO_ 1025 2;
+BA_ "MsgTimeoutMs" BO_ 1025 1500;
+BA_ "E2EProtected" BO_ 1025 1;
+BA_ "OriginBus" BO_ 1025 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1280 100;
+BA_ "GenMsgSendType" BO_ 1280 0;
+BA_ "MsgTimeoutMs" BO_ 1280 300;
+BA_ "E2EProtected" BO_ 1280 1;
+BA_ "OriginBus" BO_ 1280 "INFO_CAN";
+BA_ "SigInvalidRaw" SG_ 1280 GW_State 15;
+BA_ "SigInvalidRaw" SG_ 1280 GW_BusLoadPT 255;
+BA_ "SigInvalidRaw" SG_ 1280 GW_BusLoadINFO 255;
+BA_ "SigInvalidRaw" SG_ 1280 GW_RoutingErrorCount 255;
+BA_ "GenMsgCycleTime" BO_ 1792 0;
+BA_ "GenMsgSendType" BO_ 1792 1;
+BA_ "MsgTimeoutMs" BO_ 1792 0;
+BA_ "E2EProtected" BO_ 1792 0;
+BA_ "OriginBus" BO_ 1792 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1793 0;
+BA_ "GenMsgSendType" BO_ 1793 1;
+BA_ "MsgTimeoutMs" BO_ 1793 0;
+BA_ "E2EProtected" BO_ 1793 0;
+BA_ "OriginBus" BO_ 1793 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1794 0;
+BA_ "GenMsgSendType" BO_ 1794 1;
+BA_ "MsgTimeoutMs" BO_ 1794 0;
+BA_ "E2EProtected" BO_ 1794 0;
+BA_ "OriginBus" BO_ 1794 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1795 0;
+BA_ "GenMsgSendType" BO_ 1795 1;
+BA_ "MsgTimeoutMs" BO_ 1795 0;
+BA_ "E2EProtected" BO_ 1795 0;
+BA_ "OriginBus" BO_ 1795 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1796 0;
+BA_ "GenMsgSendType" BO_ 1796 1;
+BA_ "MsgTimeoutMs" BO_ 1796 0;
+BA_ "E2EProtected" BO_ 1796 0;
+BA_ "OriginBus" BO_ 1796 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1797 0;
+BA_ "GenMsgSendType" BO_ 1797 1;
+BA_ "MsgTimeoutMs" BO_ 1797 0;
+BA_ "E2EProtected" BO_ 1797 0;
+BA_ "OriginBus" BO_ 1797 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1801 0;
+BA_ "GenMsgSendType" BO_ 1801 1;
+BA_ "MsgTimeoutMs" BO_ 1801 0;
+BA_ "E2EProtected" BO_ 1801 0;
+BA_ "OriginBus" BO_ 1801 "PT_CAN";
+BA_ "GenMsgCycleTime" BO_ 1802 0;
+BA_ "GenMsgSendType" BO_ 1802 1;
+BA_ "MsgTimeoutMs" BO_ 1802 0;
+BA_ "E2EProtected" BO_ 1802 0;
+BA_ "OriginBus" BO_ 1802 "PT_CAN";
+BA_ "GenMsgCycleTime" BO_ 1803 0;
+BA_ "GenMsgSendType" BO_ 1803 1;
+BA_ "MsgTimeoutMs" BO_ 1803 0;
+BA_ "E2EProtected" BO_ 1803 0;
+BA_ "OriginBus" BO_ 1803 "PT_CAN";
+BA_ "GenMsgCycleTime" BO_ 1804 0;
+BA_ "GenMsgSendType" BO_ 1804 1;
+BA_ "MsgTimeoutMs" BO_ 1804 0;
+BA_ "E2EProtected" BO_ 1804 0;
+BA_ "OriginBus" BO_ 1804 "INFO_CAN";
+BA_ "GenMsgCycleTime" BO_ 1805 0;
+BA_ "GenMsgSendType" BO_ 1805 1;
+BA_ "MsgTimeoutMs" BO_ 1805 0;
+BA_ "E2EProtected" BO_ 1805 0;
+BA_ "OriginBus" BO_ 1805 "INFO_CAN";
+VAL_ 256 PT_State 15 "INVALID" 5 "FAULT" 4 "DEGRADED" 3 "DRIVE" 2 "READY" 1 "INIT" 0 "OFF" ;
+VAL_ 256 PT_GearPosition 15 "INVALID" 3 "DRIVE" 2 "NEUTRAL" 1 "REVERSE" 0 "PARK" ;
+VAL_ 256 PT_DriveMode 3 "INVALID" 2 "SPORT" 1 "NORMAL" 0 "ECO" ;
+VAL_ 256 PT_ReadyToDrive 1 "TRUE" 0 "FALSE" ;
+VAL_ 256 PT_FaultActive 1 "TRUE" 0 "FALSE" ;
+VAL_ 512 BrakeStatus 3 "INVALID" 2 "FAULT" 1 "APPLIED" 0 "RELEASED" ;
+VAL_ 512 ABS_Active 1 "TRUE" 0 "FALSE" ;
+VAL_ 512 BrakeSystemFault 1 "TRUE" 0 "FALSE" ;
+VAL_ 768 BMS_State 15 "INVALID" 5 "FAULT" 4 "DISCHARGING" 3 "CHARGING" 2 "STANDBY" 1 "INIT" 0 "OFF" ;
+VAL_ 768 ContactorState 3 "INVALID" 2 "PRECHARGE" 1 "CLOSED" 0 "OPEN" ;
+VAL_ 770 BMS_Fault 255 "INVALID" 6 "SENSOR_INVALID" 5 "COMM_LOSS" 4 "OVERCURRENT" 3 "OVERTEMPERATURE" 2 "UNDERVOLTAGE" 1 "OVERVOLTAGE" 0 "NONE" ;
+VAL_ 770 BMS_FaultSeverity 3 "CRITICAL" 2 "ERROR" 1 "WARNING" 0 "NONE" ;
+VAL_ 770 BMS_FaultActive 1 "TRUE" 0 "FALSE" ;
+VAL_ 1024 Cluster_State 15 "INVALID" 3 "DEGRADED" 2 "ACTIVE" 1 "INIT" 0 "OFF" ;
+VAL_ 1025 Warn_Battery 1 "TRUE" 0 "FALSE" ;
+VAL_ 1025 Warn_Brake 1 "TRUE" 0 "FALSE" ;
+VAL_ 1025 Warn_Powertrain 1 "TRUE" 0 "FALSE" ;
+VAL_ 1025 Warn_CommLoss 1 "TRUE" 0 "FALSE" ;
+VAL_ 1025 Warn_Diagnostic 1 "TRUE" 0 "FALSE" ;
+VAL_ 1025 Warn_Gateway 1 "TRUE" 0 "FALSE" ;
+VAL_ 1280 GW_State 15 "INVALID" 4 "FAULT" 3 "DEGRADED" 2 "NORMAL" 1 "INIT" 0 "OFF" ;
