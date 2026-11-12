@@ -50,7 +50,7 @@ A virtual vehicle of six nodes (POWERTRAIN_ECU, BRAKE_ECU, BMS_ECU, CLUSTER_ECU,
 | DIAG-REQ-006 | P2 server response time <= 50 ms. | Timeout concept. | D |
 | DIAG-REQ-007 | Each ECU shall store DTCs with status (testFailed, confirmed) per `06_diagnostics.md`. | DTC handling. | D |
 | DIAG-REQ-008 | DTCs shall be readable (0x19) and clearable (0x14) in extended session only for clear. | Access control concept. | D |
-| DIAG-REQ-009 | DIDs 0xF186, 0xF189, 0xF190 shall be readable (VIN is a simulated placeholder). | ECU identification. | D |
+| DIAG-REQ-009 | DIDs 0xF186, 0xF189, 0xF18C (simulated serial) shall be readable; a full VIN (0xF190) needs ISO-TP and is future work. | ECU identification. | D |
 | DIAG-REQ-010 | Documentation shall state that ISO 14229 / ISO 15765 are NOT fully implemented. | Avoid overclaiming. | I |
 
 ## Fault management (FLT-REQ)

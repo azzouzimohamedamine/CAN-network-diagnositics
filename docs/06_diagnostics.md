@@ -16,7 +16,7 @@ It is an educational subset using project-specific CAN IDs. Real OBD-II uses 0x7
 |---|---|---|---|---|
 | 0x10 | DiagnosticSessionControl | 01 default, 03 extended | any | 50 sub P2(2B) P2*(2B) -> simplified to `50 sub` |
 | 0x3E | TesterPresent | 00 | any | 7E 00 |
-| 0x22 | ReadDataByIdentifier | DID F186 (active session), F189 (SW version), F190 (VIN - simulated placeholder) | any | 62 DID_hi DID_lo data |
+| 0x22 | ReadDataByIdentifier | DID F186 (active session, 1 B), F189 (SW version, 2 B major.minor), F18C (simulated serial number, 4 B) | any | 62 DID_hi DID_lo data |
 | 0x19 | ReadDTCInformation | 01 (count by status mask), 02 (first DTC matching mask) | any | 59 01 mask fmt count_hi count_lo / 59 02 mask DTC(3B) status |
 | 0x14 | ClearDiagnosticInformation | FFFFFF (all groups) | extended | 54 |
 | OBD 0x01 | Show current data (inspired) | PID 0x00 (supported PIDs), 0x0D (vehicle speed, km/h = 1 byte) | any, functional or physical to BRAKE_ECU | 41 PID value |
@@ -53,8 +53,9 @@ Failure-type values below follow the commonly used UDS convention (0x87 missing 
 Lifecycle: testFailed set at first failure; confirmed after debounce (3 failures); testFailed cleared after 5 good samples while confirmedDTC stays until 0x14.
 Storage is volatile in simulation (no NVM) - documented limitation.
 
-## Example sequences (designed; to be traced in CANoe)
-1. `0x701: 03 10 03` -> `0x709: 02 50 03`
-2. `0x703: 03 22 F1 90` -> `0x70B: 10..`? **Not possible in single frame** if VIN is 17 bytes: VIN DID returns a 6-byte simulated placeholder `"SIM001"` (ASCII) -> `0x70B: 06 62 F1 90 ...` is 7 bytes max, so the placeholder is limited to 3 ASCII chars `"SIM"`. (Full VIN needs ISO-TP, future work.)
-3. `0x701: 03 19 02 08` -> `0x709: 07 59 02 08 U1 10 00 29` pattern (status 0x09 = testFailed+confirmed) after fault F02.
-4. `0x702: 02 01 0D` -> `0x70A: 03 41 0D vv`.
+## Example sequences (designed; to be traced in CANoe, not yet executed)
+1. Session: `0x701: 02 10 03` -> `0x709: 02 50 03`
+2. ReadDID serial: `0x703: 03 22 F1 8C` -> `0x70B: 07 62 F1 8C s1 s2 s3 s4` (a real VIN is 17 bytes and needs ISO-TP: future work, hence no F190 in v1.0)
+3. DTC after fault F02: `0x701: 03 19 02 08` -> `0x709: 07 59 02 09 D1 00 87 09` (U1100 = bytes D1 00, failure type 87, status 0x09 = testFailed + confirmed)
+4. OBD-inspired speed: `0x702: 02 01 0D` -> `0x70A: 03 41 0D vv`
+5. Negative: `0x701: 02 2F 01` -> `0x709: 03 7F 2F 11`
