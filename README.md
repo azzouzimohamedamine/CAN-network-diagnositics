@@ -12,15 +12,16 @@ fault injection, and a Python log-analysis/test layer.
 > This project is **not** AUTOSAR and does **not** claim ISO 14229 / ISO 26262 conformance.
 > *AUTOSAR-inspired concepts are planned for future projects.*
 
-## Status (Phase 1 delivered)
+## Status (Phase 2 delivered)
 | Area | State |
 |---|---|
 | Requirements, architecture, CAN matrix, DBC spec | done (docs 01-05) |
 | `vehicle_v1_0.dbc` (generated from `scripts/can_matrix.py`) | done, statically validated with `cantools` |
 | E2E (counter + CRC-8) Python reference + unit tests | done, executed |
-| CAPL: common libs + `powertrain_ecu.can` | written, **not yet compiled/run in CANoe** |
+| CAPL: common libs (E2E, DTC store, supervision), POWERTRAIN/BRAKE/BMS/CLUSTER nodes | written, **not yet compiled/run in CANoe** (bring-up: `tests/phase2_bringup.md`) |
+| Python: ASC log parser, periodicity/missing-message/E2E analysis | done, tested on synthetic logs |
 | Diagnostic / fault-injection / test specs | done (docs 06-08), designed only |
-| Brake/BMS/Cluster/Gateway CAPL, diagnostics CAPL, injector, Python analysis | planned (Phases 2-6) |
+| Gateway CAPL, diagnostics CAPL, injector, plots/report | planned (Phases 3-6) |
 
 ## Quick start
 ```bash
@@ -28,7 +29,8 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/generate_dbc.py        # regenerate DBC/CSV/MD from the matrix source
 python scripts/generate_dbc.py --check  # fail if committed files are stale
-pytest -q                              # static DBC + E2E tests
+pytest -q                              # static DBC, E2E and log-analysis tests (23)
+python python/main.py periodicity <log.asc>   # analyse a CANoe ASC export
 ```
 
 ## Layout

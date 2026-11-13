@@ -1,7 +1,7 @@
 # 10 - Results
 
 ## Executed results (Tier A, software)
-`pytest -q` on 2026-11-12: 17 passed, 0 failed (see `tests/test_matrix.md`, TC-001..TC-008).
+`pytest -q`: 23 passed, 0 failed (`tests/test_matrix.md`): TC-001..TC-008 on the DBC/E2E code, TC-201..TC-206 on **synthetic** logs (they test the analysis code, not the vehicle).
 Analytical (not measured) bus load from the matrix: PT_CAN 7.4 % nominal / 9.0 % worst-case stuffing; INFO_CAN 5.6 % / 6.9 %.
 
 ## Not yet available
