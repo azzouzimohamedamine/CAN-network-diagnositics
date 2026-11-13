@@ -1,0 +1,149 @@
+/*@!Encoding:1252*/
+/* bms_ecu.can - BMS_ECU simulation node on PT_CAN. (Phase 2)
+   TX : BMS_Status 0x300 (100 ms), BMS_Measurements 0x301 (50 ms),
+        BMS_Faults 0x302 (on change within 10 ms + 500 ms heartbeat), all with E2E.
+   RX : PT_Torque 0x101 supervised (timeout 30 ms). On loss: demand assumed 0, BMS_Fault = COMM_LOSS (WARNING).
+   Battery model is a PLACEHOLDER (not a validated model): OCV = 300 + SOC V, R = 0.05 ohm,
+   60 Ah pack, thermal mass 20 kJ/K. SIM_ACCEL scales model time so SOC/temperature change visibly (simulated).
+   Convention: positive BatteryCurrent = discharge.
+   Limits: OV > 410 V, UV < 310 V, OT > 60 degC (CRITICAL > 65), OC > 350 A.
+   STATUS: written, NOT yet compiled or run in CANoe. */
+includes
+{
+  #include "common/vehicle_defs.cin"
+  #include "common/e2e.cin"
+  #include "common/dtc.cin"
+  #include "common/supervision.cin"
+}
+
+variables
+{
+  message BMS_Status msgStatus;
+  message BMS_Measurements msgMeas;
+  message BMS_Faults msgFault;
+  msTimer tStatus;
+  msTimer tMeas;
+  msTimer tFaultHb;
+  msTimer tTick;
+  msTimer tInit;
+  byte gCntStatus = 0;
+  byte gCntMeas = 0;
+  byte gCntFault = 0;
+  const int MON_PT_TORQUE = 0;
+  const float SIM_ACCEL = 20.0;
+  float gSoc = 80.0;
+  float gSoh = 95.0;
+  float gVolt = 380.0;
+  float gCur = 0.0;
+  float gTemp = 25.0;
+  float gTorque = 0.0;
+  float gRpm = 0.0;
+  int gInitDone = 0;
+  int gContactor = 0;       // 0 open, 1 closed
+  int gFault = 0;           // BMS_Fault enum
+  int gSev = 0;             // BMS_FaultSeverity enum
+}
+
+void SendFault()
+{
+  msgFault.BMS_Fault = gFault;
+  msgFault.BMS_FaultSeverity = gSev;
+  msgFault.BMS_FaultActive = (gFault != 0);
+  E2E_Protect(msgFault, gCntFault);
+  output(msgFault);
+  gCntFault = (gCntFault + 1) & 0x0F;
+  setTimer(tFaultHb, BMS_FAULT_HB_MS);
+}
+
+on start
+{
+  Mon_Init(MON_PT_TORQUE, TO_PT_TORQUE_MS, DTC_U1102);
+  setTimer(tInit, 500);
+  setTimer(tTick, 10);
+  setTimer(tStatus, BMS_STATUS_CYCLE_MS);
+  setTimer(tMeas, BMS_MEAS_CYCLE_MS);
+  setTimer(tFaultHb, 100);
+  write("BMS_ECU: started (DBC v1.0.0)");
+}
+
+on timer tInit
+{
+  gInitDone = 1;
+  gContactor = 1;
+}
+
+on message PT_Torque
+{
+  if (Mon_OnRx(MON_PT_TORQUE, this))
+  {
+    gTorque = this.MotorTorqueActual;
+    gRpm = this.MotorSpeed;
+  }
+}
+
+on timer tTick
+{
+  float power;
+  float dt;
+  int newFault;
+  int newSev;
+  Mon_Tick();
+  dt = 0.01 * SIM_ACCEL;
+  if (Mon_Ok(MON_PT_TORQUE) == 0) { gTorque = 0.0; gRpm = 0.0; }
+  if (gContactor == 0) power = 0.0; else power = gTorque * gRpm * 0.10472;   // W
+  if (power >= 0.0) gCur = power / gVolt / 0.92; else gCur = power / gVolt * 0.92;
+  gSoc = gSoc - gCur * dt / (60.0 * 3600.0) * 100.0;
+  if (gSoc < 0.0) gSoc = 0.0;
+  if (gSoc > 100.0) gSoc = 100.0;
+  gVolt = 300.0 + gSoc - gCur * 0.05;
+  gTemp = gTemp + (gCur * gCur * 0.05 / 20000.0) * dt - (gTemp - 25.0) / 200.0 * dt;
+
+  newFault = 0; newSev = 0;
+  if (gTemp > 60.0) { newFault = 3; newSev = 2; if (gTemp > 65.0) newSev = 3; }
+  else if (gCur > 350.0) { newFault = 4; newSev = 2; }
+  else if (gVolt < 310.0) { newFault = 2; newSev = 2; }
+  else if (gVolt > 410.0) { newFault = 1; newSev = 2; }
+  else if (Mon_Ok(MON_PT_TORQUE) == 0) { newFault = 5; newSev = 1; }
+  if (newSev == 3) gContactor = 0;
+  if (newFault != gFault || newSev != gSev)
+  {
+    gFault = newFault;
+    gSev = newSev;
+    SendFault();                               // event-triggered, <= 10 ms after the change
+  }
+  setTimer(tTick, 10);
+}
+
+on timer tFaultHb
+{
+  SendFault();
+}
+
+on timer tStatus
+{
+  int st;
+  if (gInitDone == 0) st = 1;                  // INIT
+  else if (gSev >= 2) st = 5;                  // FAULT
+  else if (gCur > 1.0) st = 4;                 // DISCHARGING
+  else if (gCur < -1.0) st = 3;                // CHARGING
+  else st = 2;                                 // STANDBY
+  msgStatus.BMS_State = st;
+  msgStatus.ContactorState = gContactor;       // 0 OPEN, 1 CLOSED
+  msgStatus.SOC = gSoc;
+  msgStatus.SOH = gSoh;
+  E2E_Protect(msgStatus, gCntStatus);
+  output(msgStatus);
+  gCntStatus = (gCntStatus + 1) & 0x0F;
+  setTimer(tStatus, BMS_STATUS_CYCLE_MS);
+}
+
+on timer tMeas
+{
+  msgMeas.BatteryVoltage = gVolt;
+  msgMeas.BatteryCurrent = gCur;
+  msgMeas.BatteryTemperature = gTemp;
+  E2E_Protect(msgMeas, gCntMeas);
+  output(msgMeas);
+  gCntMeas = (gCntMeas + 1) & 0x0F;
+  setTimer(tMeas, BMS_MEAS_CYCLE_MS);
+}

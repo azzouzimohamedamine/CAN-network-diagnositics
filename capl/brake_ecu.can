@@ -1,0 +1,73 @@
+/*@!Encoding:1252*/
+/* brake_ecu.can - BRAKE_ECU simulation node on PT_CAN. (Phase 2)
+   TX : BRAKE_Status 0x200 (20 ms), BRAKE_VehicleDynamics 0x201 (10 ms), both with E2E.
+   RX : PT_Status 0x100 supervised (timeout 60 ms -> DTC U1102).
+   Plant (placeholder, operator driven): 'w' speed +1 m/s, 'q' speed -1 m/s, 'b' toggle brake pedal 0 / 60 %.
+   Braking: pedal % x 0.1 m/s2 deceleration (100 % = 10 m/s2).
+   STATUS: written, NOT yet compiled or run in CANoe. */
+includes
+{
+  #include "common/vehicle_defs.cin"
+  #include "common/e2e.cin"
+  #include "common/dtc.cin"
+  #include "common/supervision.cin"
+}
+
+variables
+{
+  message BRAKE_Status msgStatus;
+  message BRAKE_VehicleDynamics msgDyn;
+  msTimer tStatus;
+  msTimer tDyn;
+  byte gCntStatus = 0;
+  byte gCntDyn = 0;
+  float gSpeedMs = 0.0;
+  float gPedalPct = 0.0;
+  float gAccel = 0.0;
+  const int MON_PT_STATUS = 0;
+}
+
+on start
+{
+  Mon_Init(MON_PT_STATUS, TO_PT_STATUS_MS, DTC_U1102);
+  setTimer(tStatus, BRAKE_STATUS_CYCLE_MS);
+  setTimer(tDyn, BRAKE_DYN_CYCLE_MS);
+  write("BRAKE_ECU: started (DBC v1.0.0)");
+}
+
+on message PT_Status
+{
+  Mon_OnRx(MON_PT_STATUS, this);
+}
+
+on key 'w' { if (gSpeedMs < 80.0) gSpeedMs = gSpeedMs + 1.0; }
+on key 'q' { gSpeedMs = gSpeedMs - 1.0; if (gSpeedMs < 0.0) gSpeedMs = 0.0; }
+on key 'b' { if (gPedalPct > 0.0) gPedalPct = 0.0; else gPedalPct = 60.0; }
+
+on timer tStatus
+{
+  if (gPedalPct >= 2.0) msgStatus.BrakeStatus = 1; else msgStatus.BrakeStatus = 0;
+  msgStatus.ABS_Active = 0;
+  msgStatus.BrakeSystemFault = 0;
+  msgStatus.BrakePedalPosition = gPedalPct;
+  msgStatus.BrakePressure = gPedalPct * 1.5;      // bar, placeholder
+  E2E_Protect(msgStatus, gCntStatus);
+  output(msgStatus);
+  gCntStatus = (gCntStatus + 1) & 0x0F;
+  setTimer(tStatus, BRAKE_STATUS_CYCLE_MS);
+}
+
+on timer tDyn
+{
+  Mon_Tick();
+  if (gPedalPct > 0.0) gAccel = -gPedalPct * 0.1; else gAccel = 0.0;
+  gSpeedMs = gSpeedMs + gAccel * 0.01;
+  if (gSpeedMs < 0.0) { gSpeedMs = 0.0; gAccel = 0.0; }
+  msgDyn.VehicleSpeed = gSpeedMs * 3.6;
+  msgDyn.LongitudinalAccel = gAccel;
+  msgDyn.YawRate = 0.0;
+  E2E_Protect(msgDyn, gCntDyn);
+  output(msgDyn);
+  gCntDyn = (gCntDyn + 1) & 0x0F;
+  setTimer(tDyn, BRAKE_DYN_CYCLE_MS);
+}

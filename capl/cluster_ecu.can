@@ -1,0 +1,153 @@
+/*@!Encoding:1252*/
+/* cluster_ecu.can - CLUSTER_ECU simulation node. (Phase 2)
+   Phase 2 BRING-UP TOPOLOGY: all ECUs on PT_CAN (no gateway yet). From Phase 3 this node moves to INFO_CAN
+   and receives routed copies; its code does not change except enabling the GW_Status monitor.
+   TX : CLUSTER_Status 0x400 (100 ms), CLUSTER_Warning 0x401 (on change within 10 ms + 500 ms heartbeat).
+   RX supervised: PT_Status, BRAKE_Status, BRAKE_VehicleDynamics, BMS_Status, BMS_Measurements, BMS_Faults.
+   Behaviour: unusable speed -> DisplayedSpeed raw 255 (dashes); unusable SOC -> DisplayedSOC raw 255;
+   Warn_CommLoss on any timeout/E2E fault.
+   STATUS: written, NOT yet compiled or run in CANoe. */
+includes
+{
+  #include "common/vehicle_defs.cin"
+  #include "common/e2e.cin"
+  #include "common/dtc.cin"
+  #include "common/supervision.cin"
+}
+
+variables
+{
+  message CLUSTER_Status msgStatus;
+  message CLUSTER_Warning msgWarn;
+  msTimer tStatus;
+  msTimer tWarnHb;
+  msTimer tTick;
+  msTimer tInit;
+  byte gCntStatus = 0;
+  byte gCntWarn = 0;
+  const int MON_PT_STATUS = 0;
+  const int MON_BRAKE_STATUS = 1;
+  const int MON_BRAKE_DYN = 2;
+  const int MON_BMS_STATUS = 3;
+  const int MON_BMS_MEAS = 4;
+  const int MON_BMS_FAULT = 5;
+  const int SIG_SPEED = 0;
+  int gInitDone = 0;
+  int gSpeedOk = 0;
+  int gSocOk = 0;
+  float gSpeedKmh = 0.0;
+  float gSoc = 0.0;
+  int gPtFault = 0;
+  int gBrakeFault = 0;
+  int gBmsFaultActive = 0;
+  int gWarnBattery = 0;       // last transmitted warning state
+  int gWarnBrake = 0;
+  int gWarnPt = 0;
+  int gWarnComm = 0;
+}
+
+void SendWarn()
+{
+  msgWarn.Warn_Battery = gWarnBattery;
+  msgWarn.Warn_Brake = gWarnBrake;
+  msgWarn.Warn_Powertrain = gWarnPt;
+  msgWarn.Warn_CommLoss = gWarnComm;
+  msgWarn.Warn_Diagnostic = 0;
+  msgWarn.Warn_Gateway = 0;
+  E2E_Protect(msgWarn, gCntWarn);
+  output(msgWarn);
+  gCntWarn = (gCntWarn + 1) & 0x0F;
+  setTimer(tWarnHb, CLUSTER_WARN_HB_MS);
+}
+
+on start
+{
+  Mon_Init(MON_PT_STATUS, TO_PT_STATUS_MS, DTC_U1102);
+  Mon_Init(MON_BRAKE_STATUS, TO_BRAKE_STATUS_MS, DTC_U1100);
+  Mon_Init(MON_BRAKE_DYN, TO_BRAKE_DYN_MS, DTC_U1100);
+  Mon_Init(MON_BMS_STATUS, TO_BMS_STATUS_MS, DTC_U1101);
+  Mon_Init(MON_BMS_MEAS, TO_BMS_MEAS_MS, DTC_U1101);
+  Mon_Init(MON_BMS_FAULT, TO_BMS_FAULT_MS, DTC_U1101);
+  setTimer(tInit, 500);
+  setTimer(tTick, 10);
+  setTimer(tStatus, CLUSTER_STATUS_CYCLE_MS);
+  setTimer(tWarnHb, 150);
+  write("CLUSTER_ECU: started (DBC v1.0.0)");
+}
+
+on timer tInit { gInitDone = 1; }
+
+on message PT_Status
+{
+  if (Mon_OnRx(MON_PT_STATUS, this)) gPtFault = this.PT_FaultActive;
+}
+
+on message BRAKE_Status
+{
+  if (Mon_OnRx(MON_BRAKE_STATUS, this)) gBrakeFault = this.BrakeSystemFault;
+}
+
+on message BRAKE_VehicleDynamics
+{
+  if (Mon_OnRx(MON_BRAKE_DYN, this))
+  {
+    gSpeedOk = Sig_Check(SIG_SPEED, this.VehicleSpeed.raw, 65535, 0, 30000, DTC_C1201, DTC_FT_INVALID);
+    if (gSpeedOk) gSpeedKmh = this.VehicleSpeed;
+  }
+}
+
+on message BMS_Status
+{
+  if (Mon_OnRx(MON_BMS_STATUS, this))
+  {
+    if (this.SOC.raw != 1023 && this.SOC.raw <= 1000) { gSoc = this.SOC; gSocOk = 1; }
+    else gSocOk = 0;
+  }
+}
+
+on message BMS_Measurements
+{
+  Mon_OnRx(MON_BMS_MEAS, this);          // supervised here; value checks live in the PT/BMS consumers
+}
+
+on message BMS_Faults
+{
+  if (Mon_OnRx(MON_BMS_FAULT, this)) gBmsFaultActive = this.BMS_FaultActive;
+}
+
+on timer tTick
+{
+  int comm;
+  int wb; int wbr; int wpt;
+  Mon_Tick();
+  comm = 0;
+  if (Mon_Ok(MON_PT_STATUS) == 0) comm = 1;
+  if (Mon_Ok(MON_BRAKE_STATUS) == 0 || Mon_Ok(MON_BRAKE_DYN) == 0) comm = 1;
+  if (Mon_Ok(MON_BMS_STATUS) == 0 || Mon_Ok(MON_BMS_MEAS) == 0 || Mon_Ok(MON_BMS_FAULT) == 0) comm = 1;
+  wb = (gBmsFaultActive != 0 || Mon_Ok(MON_BMS_STATUS) == 0 || Mon_Ok(MON_BMS_FAULT) == 0);
+  wbr = (gBrakeFault != 0 || Mon_Ok(MON_BRAKE_STATUS) == 0);
+  wpt = (gPtFault != 0 || Mon_Ok(MON_PT_STATUS) == 0);
+  if (wb != gWarnBattery || wbr != gWarnBrake || wpt != gWarnPt || comm != gWarnComm)
+  {
+    gWarnBattery = wb; gWarnBrake = wbr; gWarnPt = wpt; gWarnComm = comm;
+    SendWarn();                           // event-triggered, <= 10 ms after the change
+  }
+  setTimer(tTick, 10);
+}
+
+on timer tWarnHb { SendWarn(); }
+
+on timer tStatus
+{
+  if (gInitDone == 0) msgStatus.Cluster_State = 1;           // INIT
+  else if (gWarnComm) msgStatus.Cluster_State = 3;           // DEGRADED
+  else msgStatus.Cluster_State = 2;                          // ACTIVE
+  if (gSpeedOk && Mon_Ok(MON_BRAKE_DYN)) msgStatus.DisplayedSpeed = gSpeedKmh;
+  else msgStatus.DisplayedSpeed.raw = 255;                   // dashes
+  if (gSocOk && Mon_Ok(MON_BMS_STATUS)) msgStatus.DisplayedSOC = gSoc;
+  else msgStatus.DisplayedSOC.raw = 255;
+  E2E_Protect(msgStatus, gCntStatus);
+  output(msgStatus);
+  gCntStatus = (gCntStatus + 1) & 0x0F;
+  setTimer(tStatus, CLUSTER_STATUS_CYCLE_MS);
+}

@@ -1,13 +1,22 @@
 /*@!Encoding:1252*/
-/* powertrain_ecu.can - POWERTRAIN_ECU simulation node on PT_CAN. (Phase 1)
-   TX : PT_Status 0x100 (20 ms), PT_Torque 0x101 (10 ms), both with E2E.
-   RX : none yet - BRAKE_Status/BMS supervision, timeouts and DTCs are added in Phase 2/3.
-   Operator keys: 's' start drive, 'x' stop, 'u'/'d' torque request +/-20 Nm, 'g' cycle gear.
+/* powertrain_ecu.can - POWERTRAIN_ECU simulation node on PT_CAN.
+   Phase 1: TX PT_Status 0x100 (20 ms), PT_Torque 0x101 (10 ms), both with E2E.
+   Phase 2 (this revision): receive supervision and degradation policy.
+     RX supervised: BRAKE_Status (60 ms), BRAKE_VehicleDynamics (30 ms), BMS_Status (300 ms),
+                    BMS_Measurements (150 ms), BMS_Faults (1500 ms).
+     Policy (gHealth): 2 = FAULT  if any BMS message lost/E2E-faulty or BMS fault severity >= ERROR -> torque 0
+                       1 = DEGRADED if brake message lost/E2E-faulty, brake fault, speed unusable > 500 ms,
+                                     or a battery measurement invalid/out of range -> |torque| <= 100 Nm
+                       0 = OK. Recovery is automatic when supervision heals (5 good samples).
+     Brake override: BrakeStatus APPLIED -> positive torque request forced to 0.
+   Operator keys: 's' start drive (only if READY and healthy), 'x' stop, 'u'/'d' torque request +/-20 Nm, 'g' cycle gear.
    STATUS: written, NOT yet compiled or run in CANoe. */
 includes
 {
   #include "common/vehicle_defs.cin"
   #include "common/e2e.cin"
+  #include "common/dtc.cin"
+  #include "common/supervision.cin"
 }
 
 variables
@@ -19,16 +28,67 @@ variables
   msTimer tInit;
   byte gCntStatus = 0;
   byte gCntTorque = 0;
-  int gState = 0;          // PT_STATE_*
+  const int MON_BRAKE_STATUS = 0;
+  const int MON_BRAKE_DYN = 1;
+  const int MON_BMS_STATUS = 2;
+  const int MON_BMS_MEAS = 3;
+  const int MON_BMS_FAULT = 4;
+  const int SIG_SPEED = 0;
+  const int SIG_VOLT = 1;
+  const int SIG_CUR = 2;
+  const int SIG_TEMP = 3;
+  int gState = 0;          // base state: PT_STATE_INIT / READY / DRIVE
+  int gHealth = 0;         // 0 OK, 1 DEGRADED, 2 FAULT
   int gGear = 0;           // GEAR_*
-  float gTorqueReq = 0.0;  // Nm
+  float gTorqueReq = 0.0;  // operator request [Nm]
+  float gTorqueCmd = 0.0;  // request after policy [Nm]
   float gTorqueAct = 0.0;  // Nm
-  float gMotorRpm = 0.0;   // rpm (placeholder model, replaced by vehicle model in Phase 2)
+  float gMotorRpm = 0.0;   // rpm (placeholder model)
+  int gBrakeApplied = 0;
+  int gBrakeFault = 0;
+  int gBmsFaultActive = 0;
+  int gBmsSev = 0;
+  long gSpeedBadMs = 0;
+  float gSpeedKmh = 0.0;
+}
+
+int PublishedState()
+{
+  if (gState == PT_STATE_INIT || gState == PT_STATE_OFF) return gState;
+  if (gHealth == 2) return PT_STATE_FAULT;
+  if (gHealth == 1 && gState == PT_STATE_DRIVE) return PT_STATE_DEGRADED;
+  return gState;
+}
+
+void UpdatePolicy()
+{
+  int bmsLost;
+  int brakeLost;
+  bmsLost = (Mon_Ok(MON_BMS_STATUS) == 0 || Mon_Ok(MON_BMS_MEAS) == 0 || Mon_Ok(MON_BMS_FAULT) == 0);
+  brakeLost = (Mon_Ok(MON_BRAKE_STATUS) == 0 || Mon_Ok(MON_BRAKE_DYN) == 0);
+  if (bmsLost || (gBmsFaultActive != 0 && gBmsSev >= 2)) gHealth = 2;
+  else if (brakeLost || gBrakeFault != 0 || gSpeedBadMs > 500 || Sig_IsBad(SIG_SPEED) != 0
+           || Sig_IsBad(SIG_VOLT) != 0 || Sig_IsBad(SIG_CUR) != 0 || Sig_IsBad(SIG_TEMP) != 0) gHealth = 1;
+  else gHealth = 0;
+
+  gTorqueCmd = gTorqueReq;
+  if (gHealth == 2) gTorqueCmd = 0.0;
+  else if (gHealth == 1)
+  {
+    if (gTorqueCmd > 100.0) gTorqueCmd = 100.0;
+    if (gTorqueCmd < -100.0) gTorqueCmd = -100.0;
+  }
+  if (gBrakeApplied != 0 && gTorqueCmd > 0.0) gTorqueCmd = 0.0;
 }
 
 on start
 {
   gState = PT_STATE_INIT;
+  Mon_Init(MON_BRAKE_STATUS, TO_BRAKE_STATUS_MS, DTC_U1100);
+  Mon_Init(MON_BRAKE_DYN, TO_BRAKE_DYN_MS, DTC_U1100);
+  Mon_Init(MON_BMS_STATUS, TO_BMS_STATUS_MS, DTC_U1101);
+  Mon_Init(MON_BMS_MEAS, TO_BMS_MEAS_MS, DTC_U1101);
+  Mon_Init(MON_BMS_FAULT, TO_BMS_FAULT_MS, DTC_U1101);
   setTimer(tInit, 500);                    // INIT -> READY after 500 ms
   setTimer(tStatus, PT_STATUS_CYCLE_MS);
   setTimer(tTorque, PT_TORQUE_CYCLE_MS);
@@ -40,7 +100,53 @@ on timer tInit
   gState = PT_STATE_READY;
 }
 
-on key 's' { if (gState == PT_STATE_READY) { gGear = GEAR_DRIVE; gState = PT_STATE_DRIVE; } }
+on message BRAKE_Status
+{
+  if (Mon_OnRx(MON_BRAKE_STATUS, this))
+  {
+    gBrakeApplied = (this.BrakeStatus == 1);
+    gBrakeFault = (this.BrakeSystemFault != 0 || this.BrakeStatus == 2);
+  }
+}
+
+on message BRAKE_VehicleDynamics
+{
+  if (Mon_OnRx(MON_BRAKE_DYN, this))
+  {
+    if (Sig_Check(SIG_SPEED, this.VehicleSpeed.raw, 65535, 0, 30000, DTC_C1201, DTC_FT_INVALID))
+    {
+      gSpeedKmh = this.VehicleSpeed;
+      gSpeedBadMs = 0;
+    }
+    else gSpeedBadMs = gSpeedBadMs + 10;   // unusable: keep last valid value, degrade after 500 ms
+  }
+}
+
+on message BMS_Status
+{
+  Mon_OnRx(MON_BMS_STATUS, this);
+}
+
+on message BMS_Measurements
+{
+  if (Mon_OnRx(MON_BMS_MEAS, this))
+  {
+    Sig_Check(SIG_VOLT, this.BatteryVoltage.raw, 65535, 0, 5000, DTC_P1301, DTC_FT_INVALID);
+    Sig_Check(SIG_CUR, this.BatteryCurrent.raw, 32767, -5000, 5000, DTC_P1303, DTC_FT_INVALID);
+    Sig_Check(SIG_TEMP, this.BatteryTemperature.raw, 255, 0, 165, DTC_P1302, DTC_FT_INVALID);
+  }
+}
+
+on message BMS_Faults
+{
+  if (Mon_OnRx(MON_BMS_FAULT, this))
+  {
+    gBmsFaultActive = this.BMS_FaultActive;
+    gBmsSev = this.BMS_FaultSeverity;
+  }
+}
+
+on key 's' { if (gState == PT_STATE_READY && gHealth == 0) { gGear = GEAR_DRIVE; gState = PT_STATE_DRIVE; } }
 on key 'x' { gTorqueReq = 0.0; gGear = GEAR_PARK; if (gState == PT_STATE_DRIVE) gState = PT_STATE_READY; }
 on key 'u' { if (gState == PT_STATE_DRIVE && gTorqueReq < 400.0) gTorqueReq += 20.0; }
 on key 'd' { if (gState == PT_STATE_DRIVE && gTorqueReq > -400.0) gTorqueReq -= 20.0; }
@@ -48,11 +154,13 @@ on key 'g' { gGear = (gGear + 1) % 4; }
 
 on timer tStatus
 {
-  msgStatus.PT_State = gState;
+  int ps;
+  ps = PublishedState();
+  msgStatus.PT_State = ps;
   msgStatus.PT_GearPosition = gGear;
   msgStatus.PT_DriveMode = 1;                                   // NORMAL
-  msgStatus.PT_ReadyToDrive = (gState == PT_STATE_READY || gState == PT_STATE_DRIVE);
-  msgStatus.PT_FaultActive = (gState == PT_STATE_FAULT);
+  msgStatus.PT_ReadyToDrive = (ps == PT_STATE_READY || ps == PT_STATE_DRIVE);
+  msgStatus.PT_FaultActive = (ps == PT_STATE_FAULT);
   E2E_Protect(msgStatus, gCntStatus);
   output(msgStatus);
   gCntStatus = (gCntStatus + 1) & 0x0F;
@@ -61,13 +169,15 @@ on timer tStatus
 
 on timer tTorque
 {
-  // first-order lag towards request; crude speed model (placeholder)
-  gTorqueAct = gTorqueAct + (gTorqueReq - gTorqueAct) * 0.1;
+  Mon_Tick();
+  UpdatePolicy();
+  // first-order lag towards the commanded torque; crude speed model (placeholder)
+  gTorqueAct = gTorqueAct + (gTorqueCmd - gTorqueAct) * 0.1;
   gMotorRpm = gMotorRpm + gTorqueAct * 0.02 - gMotorRpm * 0.002;
   if (gMotorRpm < 0.0) gMotorRpm = 0.0;
   if (gMotorRpm > 12000.0) gMotorRpm = 12000.0;
 
-  msgTorque.MotorTorqueRequest = gTorqueReq;
+  msgTorque.MotorTorqueRequest = gTorqueCmd;
   msgTorque.MotorTorqueActual = gTorqueAct;
   msgTorque.MotorSpeed = gMotorRpm;
   E2E_Protect(msgTorque, gCntTorque);
