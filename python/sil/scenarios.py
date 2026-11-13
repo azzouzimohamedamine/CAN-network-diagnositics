@@ -89,6 +89,7 @@ class Result:
 
 def build(name):
     sim = Simulation()
+    sim.windows = []          # (t0_ms, t1_ms, label) of injected faults, used for plots/reports
     pt, br = sim.add(PowertrainEcu), sim.add(BrakeEcu)
     sim.add(BmsEcu)
     sim.add(ClusterEcu)
@@ -100,23 +101,31 @@ def build(name):
         pass
     elif name == "f01_single_frame_loss":
         drop_once(sim, ID["BRAKE_Status"], 3000)
+        sim.windows.append((3000, 3020, "one 0x200 frame dropped"))
     elif name == "f02_brake_timeout":
         drop(sim, ID["BRAKE_Status"], 3000, 3500)
+        sim.windows.append((3000, 3500, "0x200 BRAKE_Status absent"))
     elif name == "f03_speed_invalid":
         set_raw(sim, ID["BRAKE_VehicleDynamics"], 3000, 3800, VehicleSpeed=65535)
+        sim.windows.append((3000, 3800, "VehicleSpeed = invalid (0xFFFF)"))
     elif name == "f04_voltage_out_of_range":
         set_raw(sim, ID["BMS_Measurements"], 3000, 3500, BatteryVoltage=6000)
+        sim.windows.append((3000, 3500, "BatteryVoltage = 600 V"))
     elif name == "f05_bms_unavailable":
         sim.at(3000, lambda s: setattr(s.nodes["BMS_ECU"], "enabled", False))
         sim.at(4500, lambda s: setattr(s.nodes["BMS_ECU"], "enabled", True))
+        sim.windows.append((3000, 4500, "BMS_ECU unavailable"))
         dur = 6500
     elif name == "f07a_counter_fault":
         freeze_counter(sim, ID["BRAKE_VehicleDynamics"], 3000, 3100)
+        sim.windows.append((3000, 3100, "alive counter frozen on 0x201"))
     elif name == "f07b_crc_fault":
         corrupt_crc(sim, ID["BRAKE_VehicleDynamics"], 3000, 3100)
+        sim.windows.append((3000, 3100, "CRC corrupted on 0x201"))
     elif name == "brake_override":
         sim.at(3000, lambda s: br.press("b"))
         sim.at(4000, lambda s: br.press("b"))
+        sim.windows.append((3000, 4000, "brake pedal applied"))
     else:
         raise ValueError(name)
     return sim, dur

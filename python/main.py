@@ -42,7 +42,14 @@ def main(argv):
                 with open(path) as fh:
                     print(format_report(analyze(list(parse_asc(fh)), db)))
         return 0
-    print("usage: main.py dbc-summary | periodicity <log.asc> | sil <scenario|all> [--report]")
+    if argv[:1] == ["sil-report"]:
+        from reporting.sil_report import build
+        root = DBC.parent.parent
+        (root / "docs" / "figures").mkdir(parents=True, exist_ok=True)
+        build(root / "docs" / "figures", root / "docs" / "sil_results.md")
+        print("wrote docs/sil_results.md and docs/figures/sil_*.png")
+        return 0
+    print("usage: main.py dbc-summary | periodicity <log.asc> | sil <scenario|all> [--report] | sil-report")
     return 2
 
 

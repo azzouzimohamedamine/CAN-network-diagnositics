@@ -1,0 +1,23 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: DBC and generated files up to date
+        run: python scripts/generate_dbc.py --check
+      - name: Tests (DBC, E2E, log analysis, Python SIL scenarios)
+        run: python -m pytest -q
+      - name: Regenerate SIL figures and report
+        run: python python/main.py sil-report
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sil-results
+          path: |
+            docs/sil_results.md
+            docs/figures/

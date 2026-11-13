@@ -18,3 +18,5 @@ Logs/
 # Keep small, reviewed sample logs explicitly via: git add -f results/sample_logs/<file>
 results/*.png
 !results/.gitkeep
+# SIL raw logs are regenerated on demand; figures in docs/figures ARE committed
+results/sil/
