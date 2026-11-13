@@ -8,3 +8,4 @@
 - Phase 1: CAPL files are written but not compiled or executed; CANoe import of the DBC unverified.
 - Bus-load figures are analytical until measured.
 - CANoe/CANalyzer need a Vector licence; availability of demo/student editions must be checked on Vector's site.
+- Python SIL: a Python port of the CAPL design on a simulated-time bus; it does not validate the CAPL source, CANoe behaviour, arbitration, bit timing or timing jitter of real tools.

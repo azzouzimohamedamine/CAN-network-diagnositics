@@ -58,6 +58,6 @@ These separations are what Projects 2 and 4 will map to MCAL/BSW/RTE-style modul
 **This project is not AUTOSAR. AUTOSAR-inspired concepts are planned for future projects.**
 
 ## Reproducibility tiers
-1. **Tier A (no Vector licence):** DBC + Python tests + log analysis. Fully executed today.
+1. **Tier A (no Vector licence):** DBC + Python tests + log analysis + **Python SIL** (`python/sil`, simulated-time port of the ECUs, fault scenarios). Fully executed today.
 2. **Tier B (CANoe/CANalyzer licence, virtual channels):** CAPL simulation, panels, test modules. Requires a licence or demo edition - check Vector's current offers; nothing here assumes one is available.
 3. **Tier C (hardware):** optional STM32/ESP32 CAN nodes (Project 2). Not part of Project 1 results.

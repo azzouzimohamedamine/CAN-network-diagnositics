@@ -19,6 +19,7 @@ fault injection, and a Python log-analysis/test layer.
 | `vehicle_v1_0.dbc` (generated from `scripts/can_matrix.py`) | done, statically validated with `cantools` |
 | E2E (counter + CRC-8) Python reference + unit tests | done, executed |
 | CAPL: common libs (E2E, DTC store, supervision), POWERTRAIN/BRAKE/BMS/CLUSTER nodes | written, **not yet compiled/run in CANoe** (bring-up: `tests/phase2_bringup.md`) |
+| **Python SIL** (`python/sil`): ECUs + fault scenarios, no Vector tools | done, 10 scenario tests executed (simulated) |
 | Python: ASC log parser, periodicity/missing-message/E2E analysis | done, tested on synthetic logs |
 | Diagnostic / fault-injection / test specs | done (docs 06-08), designed only |
 | Gateway CAPL, diagnostics CAPL, injector, plots/report | planned (Phases 3-6) |
@@ -29,7 +30,8 @@ python -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 python scripts/generate_dbc.py        # regenerate DBC/CSV/MD from the matrix source
 python scripts/generate_dbc.py --check  # fail if committed files are stale
-pytest -q                              # static DBC, E2E and log-analysis tests (23)
+pytest -q                              # DBC, E2E, log-analysis and SIL scenario tests (33)
+python python/main.py sil all          # run the Python SIL scenarios (no CANoe needed)
 python python/main.py periodicity <log.asc>   # analyse a CANoe ASC export
 ```
 

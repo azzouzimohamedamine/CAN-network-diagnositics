@@ -67,7 +67,7 @@ void UpdatePolicy()
   bmsLost = (Mon_Ok(MON_BMS_STATUS) == 0 || Mon_Ok(MON_BMS_MEAS) == 0 || Mon_Ok(MON_BMS_FAULT) == 0);
   brakeLost = (Mon_Ok(MON_BRAKE_STATUS) == 0 || Mon_Ok(MON_BRAKE_DYN) == 0);
   if (bmsLost || (gBmsFaultActive != 0 && gBmsSev >= 2)) gHealth = 2;
-  else if (brakeLost || gBrakeFault != 0 || gSpeedBadMs > 500 || Sig_IsBad(SIG_SPEED) != 0
+  else if (brakeLost || gBrakeFault != 0 || gSpeedBadMs > 500
            || Sig_IsBad(SIG_VOLT) != 0 || Sig_IsBad(SIG_CUR) != 0 || Sig_IsBad(SIG_TEMP) != 0) gHealth = 1;
   else gHealth = 0;
 
