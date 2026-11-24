@@ -1,4 +1,4 @@
-# CANoe configuration guide (to be executed by the user - no binary .cfg committed)
+# CANoe configuration 
 Status: **designed, not executed.** Requires a Vector CANoe licence/edition of your own.
 1. New configuration; two virtual CAN channels: **PT_CAN**, **INFO_CAN** (500 kbit/s).
 2. Associate `can_database/vehicle_v1_0.dbc` with both networks.
