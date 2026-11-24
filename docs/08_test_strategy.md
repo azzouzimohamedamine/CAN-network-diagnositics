@@ -7,7 +7,6 @@
 | **Designed** | Specified, not yet run. Actual result = "not executed". |
 | **Simulated (CANoe SIL)** | Run in CANoe/CANalyzer on virtual channels (none yet). |
 | **HW-unavailable** | Needs real ECU/vehicle/HIL; out of scope for Project 1. |
-Virtual tests are never reported as physical tests (SIM-REQ-002).
 
 ## Test types
 Functional (nominal signals/periodicity/routing/diagnostics), Negative (invalid requests, invalid signals), Boundary (min/max/invalid raw of a signal), Timeout, Fault injection (F01-F08), Regression (golden log replay + generator drift + DBC compatibility).
