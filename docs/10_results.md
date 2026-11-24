@@ -27,4 +27,3 @@ No CANoe/CANalyzer run has been performed. No measured periodicity, latency, bus
 | F9 | Test result summary | pytest + CANoe reports | 6 | partial (pytest only) |
 | F10 | Gateway routing proof (same frame on both buses, latency) | trace | 3 | not generated |
 | F11 | Diagnostic sequence diagram + trace | Mermaid + trace | 4 | not generated |
-Screenshots to capture later: CANoe Trace, Graphics, Statistics windows; CANalyzer Statistics and filter configuration; Test report.
