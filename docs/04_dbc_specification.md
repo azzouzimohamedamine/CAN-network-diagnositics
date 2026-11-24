@@ -17,7 +17,6 @@ File: `can_database/vehicle_v1_0.dbc` (v1.0.0), **generated** from `scripts/can_
 | Add enum value | minor | yes |
 | Rename/renumber message, move/resize/rescale a released signal, change cycle time class | major (2.0.0) | only with migration note in doc 12 |
 | Documentation/comment fix | patch | yes |
-Rules: never reuse a retired ID; files are versioned by name (`vehicle_v1_0.dbc`); a new minor version keeps all v1.0 content intact. A regression test comparing against the previous released DBC is planned (Phase 6).
 
 ## Verification performed (executed)
 `tests/unit/test_dbc_static.py` (TC-001..TC-008): strict load, unique standard IDs and range ownership, min/max encode-decode round-trip for every signal, E2E layout in all 10 protected messages, generator drift, invalid-value placement.
