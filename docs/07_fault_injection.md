@@ -15,4 +15,4 @@ Injection is reversible (FLT-REQ-002). Status of all rows: **designed, not execu
 | F07b | Wrong checksum (bit flip in payload) | CRC-8 mismatch | Frame discarded | U1111 (0x83) | 5 good frames | TC-109 |
 | F08 | Invalid diagnostic request (bad length / unknown SID / DID) | Request parser | Negative response 0x13 / 0x11 / 0x31; no state change | NRC only (no DTC) | immediate | TC-114, TC-115 |
 
-Safety note: these scenarios use ISO 26262 *vocabulary* informally; no ASIL rating or hazard analysis is claimed in Project 1 (Project 6).
+
