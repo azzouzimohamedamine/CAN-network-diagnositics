@@ -1,4 +1,4 @@
-# CAN matrix v1.0.0 (GENERATED - do not edit; edit scripts/can_matrix.py)
+# CAN matrix v1.0.0 (GENERATED -  scripts/can_matrix.py)
 
 Both networks: 500 kbit/s, 11-bit identifiers, DLC 8, Intel byte order.
 
