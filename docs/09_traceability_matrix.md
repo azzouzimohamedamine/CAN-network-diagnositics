@@ -21,4 +21,3 @@ Implementation status: **done** (exists and executed), **written** (exists, not 
 | TEST-REQ-001..004 | 08 | `tests/test_matrix.md` | inspection | done |
 | TEST-REQ-005 | 08 | `python/can_analysis` | TC-120 | planned (Phase 5) |
 | SIM-REQ-001..003, ARCH-REQ-001..003, DOC-REQ-001 | 02, 11, 12 | docs | inspection | done |
-Gaps are intentional and visible; they are the Phase 2-6 backlog.
