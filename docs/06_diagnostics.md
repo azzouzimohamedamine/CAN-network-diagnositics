@@ -53,7 +53,7 @@ Failure-type values below follow the commonly used UDS convention (0x87 missing 
 Lifecycle: testFailed set at first failure; confirmed after debounce (3 failures); testFailed cleared after 5 good samples while confirmedDTC stays until 0x14.
 Storage is volatile in simulation (no NVM) - documented limitation.
 
-## Example sequences (designed; to be traced in CANoe, not yet executed)
+## Example sequences 
 1. Session: `0x701: 02 10 03` -> `0x709: 02 50 03`
 2. ReadDID serial: `0x703: 03 22 F1 8C` -> `0x70B: 07 62 F1 8C s1 s2 s3 s4` (a real VIN is 17 bytes and needs ISO-TP: future work, hence no F190 in v1.0)
 3. DTC after fault F02: `0x701: 03 19 02 08` -> `0x709: 07 59 02 09 D1 00 87 09` (U1100 = bytes D1 00, failure type 87, status 0x09 = testFailed + confirmed)
